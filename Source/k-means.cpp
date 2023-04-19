@@ -1,8 +1,4 @@
-﻿#include <iostream>
-#include <vector>
-#include <cmath>
-#include <string>
-#include <fstream>
+﻿#include "k-means.hpp"
 
 //Данные
 struct Data
