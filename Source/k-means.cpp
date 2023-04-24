@@ -1,41 +1,46 @@
 ﻿#include "k-means.hpp"
+#include "Iris.hpp"
+#include "IClusterer.hpp"
 
-//Данные
-struct Data
-{
-	double sepal_length;  //Длина чашелистника.
-	double sepal_width;	  //Ширина чашелистника.
-	double petal_length;  //Длина лепестка.
-	double petal_width;	  //Ширина лепестка.
+void kMeans::LoadDataClustering(const Data<double>& _data) {
+	m_data = _data;
+}
 
-};
+void kMeans::SetDataCount(const uint32_t _dataCount) noexcept {
+	m_dataCount = _dataCount;
+}
 
-class k_means
-{
-public:
-	k_means(int n,const std::vector<Data>& data,int n_klasters);
-	void clustering();
+void kMeans::SetClustersCentersCount(const uint32_t _clustersCentersCount) noexcept {
+	m_clustersCentersCount = _clustersCentersCount;
+}
 
-private:
-	const int max_iter=200;			//Количество операций.
 
-	std::vector<Data> m_centers;	//Центры.
-	int n_klaster{0};				//Количество кластеров(центров).
-	int n_data{0};					//Количество данных.
-	std::vector<Data> m_data;		//Данные.
 
-	void show( std::vector<int>& result);
-	void choice_centr();												//Выбор центров.
-	double euclidean_distance(const Data& p,const Data& q)const;		//Расстояние Евклида. 
-	double recalculation_centers(const double& a, const double& b);		//Перерасчёт центров.
+template <typename T>
+concept DerivedFromIData = std::is_base_of<IData, T>::value;
 
-};
+template <DerivedFromIData T>
+std::vector<std::vector<double>> ConvertInRawData(const std::vector<T>& data) {
+	std::vector<std::vector<double>> result;
+	for (const auto& el : data) {
+		result.push_back(el.getRawData());
+	}
+	return result;
+}
 
-void set_data(const std::string& adres, std::vector<Data>& mas);
+
+
+
+
+
+
+
+
+void set_data(const std::string& adres, std::vector<Iris>& mas);
 
 int main()
 {
-	/*std::vector<Data> test
+	/*std::vector<Iris> test
 	{
 		{5.1,3.5,1.4,0.2},
 		{4.9,3.0,1.4,0.2},
@@ -49,43 +54,45 @@ int main()
 		{2.9,2.1,0.5,0.1}
 	};*/
 
-	std::vector<Data> test;
+	std::vector<Iris> test;
 	set_data("C:/Users/User/Desktop/test_data.csv", test);
-	//for (auto& el : testing)
-	//{
-	//	std::cout << el.sepal_length << " " << el.sepal_width << " " << el.petal_length << " " << el.petal_width << std::endl;
-	//}
 
-	k_means testing(static_cast<int>(test.size()),test,5);
-	testing.clustering();
+	kMeans testClusterizator;
+	testClusterizator.SetDataCount(test.size());
+	testClusterizator.SetClustersCentersCount(5);
+	testClusterizator.LoadDataClustering(ConvertInRawData(test));
+
+
+	//kMeans testing(static_cast<int>(test.size()),test,5);
+	//testing.clustering();
 
 	
     return 0;
 }
 
-k_means::k_means(int n, const std::vector<Data>& data, int n_klasters):n_data{n},m_data{data},n_klaster{n_klasters}
+kMeans::kMeans()
 {choice_centr();}
 
-void k_means::clustering()
+void kMeans::Сlustering()
 {
 	//std::cout << "The beginning of clustering:" << std::endl;
-	std::vector<int> result_iter_1(n_data, -1), result_iter_2(n_data, -2);
+	std::vector<int> result_iter_1(m_dataCount, -1), result_iter_2(m_dataCount, -2);
 	int iter{ 0 };
 	while(true)
 	{
 		//Централизация центров.
-		for (int j {0}; j < n_data; ++j)
+		for (int j {0}; j < m_dataCount; ++j)
 		{
 			std::vector<double> mas;
-			for (int i {0}; i < n_klaster; ++i)
+			for (int i {0}; i < m_clustersCentersCount; ++i)
 			{
 				double temp = euclidean_distance(m_data[j], m_centers[i]);
 				mas.push_back(temp);
-				//std::cout << "Distance from data " << j << " to the center " << i << " : " << mas[i] << std::endl;
+				//std::cout << "Distance from Iris " << j << " to the center " << i << " : " << mas[i] << std::endl;
 			}
 			double min_dist = mas[0];
 			int numder_centr{ 0 };
-			for (int i {0}; i < n_klaster; ++i)
+			for (int i {0}; i < m_clustersCentersCount; ++i)
 			{
 				if (min_dist>mas[i])
 				{
@@ -95,29 +102,29 @@ void k_means::clustering()
 			}
 			//std::cout << "Minimum distance to the center #" << numder_centr << std::endl;
 			//std::cout << "Recalculate the center #" << numder_centr << std::endl;
-			m_centers[numder_centr].sepal_length = recalculation_centers(m_data[j].sepal_length,m_centers[numder_centr].sepal_length);
-			m_centers[numder_centr].sepal_width = recalculation_centers(m_data[j].sepal_width, m_centers[numder_centr].sepal_width);
-			m_centers[numder_centr].petal_length = recalculation_centers(m_data[j].petal_length, m_centers[numder_centr].petal_length);
-			m_centers[numder_centr].petal_width = recalculation_centers(m_data[j].petal_width, m_centers[numder_centr].petal_width);
-			/*std::cout << "Center # " << numder_centr << " " << m_centers[numder_centr].sepal_length <<
-				" " << m_centers[numder_centr].sepal_width <<
-				" " << m_centers[numder_centr].petal_length <<
-				" " << m_centers[numder_centr].petal_width << std::endl;*/
+			m_centers[numder_centr].m_sepal_length = recalculation_centers(m_data[j].m_sepal_length,m_centers[numder_centr].m_sepal_length);
+			m_centers[numder_centr].m_sepal_width = recalculation_centers(m_data[j].m_sepal_width, m_centers[numder_centr].m_sepal_width);
+			m_centers[numder_centr].m_petal_length = recalculation_centers(m_data[j].m_petal_length, m_centers[numder_centr].m_petal_length);
+			m_centers[numder_centr].m_petal_width = recalculation_centers(m_data[j].m_petal_width, m_centers[numder_centr].m_petal_width);
+			/*std::cout << "Center # " << numder_centr << " " << m_centers[numder_centr].m_sepal_length <<
+				" " << m_centers[numder_centr].m_sepal_width <<
+				" " << m_centers[numder_centr].m_petal_length <<
+				" " << m_centers[numder_centr].m_petal_width << std::endl;*/
 		}
 		//Классифицируем данные по кластерам.
-		std::vector<int> mass(n_data,-1);
-		//std::cout << "Let's classify Data:" << std::endl;
-		for (int k {0}; k < n_data; ++k)
+		std::vector<int> mass(m_dataCount,-1);
+		//std::cout << "Let's classify Iris:" << std::endl;
+		for (int k {0}; k < m_dataCount; ++k)
 		{
 			std::vector<double> mas;
-			for (int i {0}; i < n_klaster; ++i)
+			for (int i {0}; i < m_clustersCentersCount; ++i)
 			{
 				mas.push_back(euclidean_distance(m_data[k], m_centers[i]));
-				//std::cout << "Distance from data " << k << "to the center " << i << " : " << mas[i] << std::endl;
+				//std::cout << "Distance from Iris " << k << "to the center " << i << " : " << mas[i] << std::endl;
 			}
 			double min_dist = mas[0];
 			int numder_centr{ 0 };
-			for (int i{ 0 }; i < n_klaster; ++i)
+			for (int i{ 0 }; i < m_clustersCentersCount; ++i)
 			{
 				if (min_dist > mas[i])
 				{
@@ -126,36 +133,17 @@ void k_means::clustering()
 				}
 			}
 			mass[k] = numder_centr;
-			//std::cout << "Data " << k << " closest to the center " << numder_centr << std::endl;
+			//std::cout << "Iris " << k << " closest to the center " << numder_centr << std::endl;
 		}
 		//std::cout << "Array of matching pixels and centers: " << std::endl;
-		for (int i {0}; i < n_data; ++i)
+		for (int i {0}; i < m_dataCount; ++i)
 		{
 			//std::cout << mass[i] << " ";
 			result_iter_1[i]=mass[i];
 		}
-		//std::cout << "\n"<<std::endl;
 
-		//Вывод результата.
-		/*std::cout << "Clustering result:" << std::endl;
-		int itr = 10 + 1;
-		for (int i {0}; i < n_klaster; ++i)
-		{
-			std::cout << "Claster #" << i + 1 << std::endl;
-			for (int j {0}; j < n_data; ++j)
-			{
-				if (mass[j]==i)
-				{
-					std::cout << m_data[j].sepal_length <<
-						" " << m_data[j].sepal_width <<
-						" " << m_data[j].petal_length <<
-						" " << m_data[j].petal_width << std::endl;
-					mass[j] = ++itr;
-				}
-			}
-		}*/
 		++iter;
-		if (result_iter_1==result_iter_2 || iter>=max_iter)
+		if (result_iter_1==result_iter_2 || iter>=m_maxIterations)
 		{
 			break;
 		}
@@ -165,21 +153,21 @@ void k_means::clustering()
 	show(result_iter_1);
 }
 
-void k_means::show( std::vector<int>& result)
+void kMeans::show( std::vector<int>& result)
 {
 	std::cout << "Clustering result:" << std::endl;
 	int itr = 10 + 1;
-	for (int i{ 0 }; i < n_klaster; ++i)
+	for (int i{ 0 }; i < m_clustersCentersCount; ++i)
 	{
 		std::cout << "Claster #" << i + 1 << std::endl;
-		for (int j{ 0 }; j < n_data; ++j)
+		for (int j{ 0 }; j < m_dataCount; ++j)
 		{
 			if (result[j] == i)
 			{
-				std::cout << m_data[j].sepal_length <<
-					" " << m_data[j].sepal_width <<
-					" " << m_data[j].petal_length <<
-					" " << m_data[j].petal_width << std::endl;
+				std::cout << m_data[j].m_sepal_length <<
+					" " << m_data[j].m_sepal_width <<
+					" " << m_data[j].m_petal_length <<
+					" " << m_data[j].m_petal_width << std::endl;
 				result[j] = ++itr;
 			}
 		}
@@ -187,26 +175,26 @@ void k_means::show( std::vector<int>& result)
 	}
 }
 
-void k_means::choice_centr()
+void kMeans::choice_centr()
 {
 	srand((unsigned)time(NULL));
 
-	Data temp{ 0 };
-	std::vector<Data> temp_centr(n_klaster, {-1, -1, -1, -1});
-	for (int i {0}; i < n_klaster; ++i)
+	Iris temp;
+	std::vector<Iris> temp_centr(m_clustersCentersCount, {-1, -1, -1, -1});
+	for (int i {0}; i < m_clustersCentersCount; ++i)
 	{
-		temp = m_data[rand() % n_data];
-		for (int j {i}; j < n_klaster; ++j)
+		temp = m_data[rand() % m_dataCount];
+		for (int j {i}; j < m_clustersCentersCount; ++j)
 		{
 			/*if (m_centers.empty())
 			{
 				m_centers.push_back(temp);
 			}*/
 			//Проверка на дублирование центров.
-			 if (temp.sepal_length == temp_centr[j].sepal_length
-				&& temp.sepal_width == temp_centr[j].sepal_width
-				&& temp.petal_length == temp_centr[j].petal_length
-				&& temp.petal_width == temp_centr[j].petal_width)
+			 if (temp.m_sepal_length == temp_centr[j].m_sepal_length
+				&& temp.m_sepal_width == temp_centr[j].m_sepal_width
+				&& temp.m_petal_length == temp_centr[j].m_petal_length
+				&& temp.m_petal_width == temp_centr[j].m_petal_width)
 			{
 				 --i;
 				 break;
@@ -220,48 +208,48 @@ void k_means::choice_centr()
 	m_centers = temp_centr;
 }
 
-double k_means::euclidean_distance(const Data& p, const Data& q) const
+double kMeans::euclidean_distance(const Iris& p, const Iris& q) const
 {
-	double temp = sqrt(pow((p.sepal_length - q.sepal_length), 2)
-		+ pow((p.sepal_width - q.sepal_width), 2)
-		+ pow((p.petal_length - q.petal_length), 2)
-		+ pow((p.petal_width - q.petal_width), 2));
+	double temp = sqrt(pow((p.m_sepal_length - q.m_sepal_length), 2)
+		+ pow((p.m_sepal_width - q.m_sepal_width), 2)
+		+ pow((p.m_petal_length - q.m_petal_length), 2)
+		+ pow((p.m_petal_width - q.m_petal_width), 2));
 	return	temp;
 }
 
-double k_means::recalculation_centers(const double& a, const double& b)
+double kMeans::recalculation_centers(const double& a, const double& b)
 {
 	return (a + b) / 2;
 }
 
-void set_data(const std::string& adres, std::vector<Data>& mas)
+void set_data(const std::string& adres, std::vector<Iris>& mas)
 {
 	
 	try
 	{
-		std::ifstream  data;
-		data.exceptions(std::ifstream::badbit | std::ifstream::failbit);
-		std::string  sepal_length, sepal_width, petal_length, petal_width, header;
-		data.open(adres);
-		std::getline(data, header, '\n');
-		while (data.good())
+		std::ifstream  Iris;
+		Iris.exceptions(std::ifstream::badbit | std::ifstream::failbit);
+		std::string  m_sepal_length, m_sepal_width, m_petal_length, m_petal_width, header;
+		Iris.open(adres);
+		std::getline(Iris, header, '\n');
+		while (Iris.good())
 		{
-			std::getline(data, sepal_length, ';');
-			std::getline(data, sepal_width, ';');
-			std::getline(data, petal_length, ';');
-			std::getline(data, petal_width, '\n');
+			std::getline(Iris, m_sepal_length, ';');
+			std::getline(Iris, m_sepal_width, ';');
+			std::getline(Iris, m_petal_length, ';');
+			std::getline(Iris, m_petal_width, '\n');
 
-			mas.push_back({ std::stod(sepal_length),std::stod(sepal_width),std::stod(petal_length),std::stod(petal_width) });
+			mas.push_back({std::stod(m_sepal_length), std::stod(m_sepal_width),std::stod(m_petal_length),std::stod(m_petal_width) });
 
-			sepal_length.clear();
-			sepal_width.clear();
-			petal_length.clear();
-			petal_width.clear();
+			m_sepal_length.clear();
+			m_sepal_width.clear();
+			m_petal_length.clear();
+			m_petal_width.clear();
 		}
-		data.close();
+		Iris.close();
 	}
 	catch (const std::ifstream::failure& ex)
 	{
-		//std::cout << ex.what() << " Error" << std::endl;
+		std::cout << ex.what() << " Error" << std::endl;
 	}
 }
