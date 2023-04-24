@@ -6,11 +6,11 @@
 #include <string>
 #include <fstream>
 
+template <class _Type>
+using Data = std::vector<std::vector<_Type>>;
 
 class kMeans : IClusterer {
 public:
-	template <class _Type>
-	using Data = std::vector<std::vector<_Type>>;
 
 	virtual void LoadDataClustering(const Data<double>& _data) override;
 
@@ -41,12 +41,15 @@ private:
 	uint32_t m_dataCount = 0;
 
 	//Центры.
-	std::vector<Iris> m_centers;
+	Data<double> m_centers;
 
 	//Данные.
 	Data<double> m_data;
 
 	void show(std::vector<int>& result);
+
+	void FindInitialCentroids();
+
 	void choice_centr();												//Выбор центров.
 	double euclidean_distance(const Iris& p, const Iris& q)const;		//Расстояние Евклида. 
 	double recalculation_centers(const double& a, const double& b);		//Перерасчёт центров.

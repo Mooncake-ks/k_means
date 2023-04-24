@@ -2,6 +2,8 @@
 #include "Iris.hpp"
 #include "IClusterer.hpp"
 
+#include <random>
+
 void kMeans::LoadDataClustering(const Data<double>& _data) {
 	m_data = _data;
 }
@@ -61,6 +63,7 @@ int main()
 	testClusterizator.SetDataCount(test.size());
 	testClusterizator.SetClustersCentersCount(5);
 	testClusterizator.LoadDataClustering(ConvertInRawData(test));
+	testClusterizator.Clustering();
 
 
 	//kMeans testing(static_cast<int>(test.size()),test,5);
@@ -70,11 +73,10 @@ int main()
     return 0;
 }
 
-kMeans::kMeans()
-{choice_centr();}
+void kMeans::Clustering() {
 
-void kMeans::Сlustering()
-{
+	FindInitialCentroids();
+
 	//std::cout << "The beginning of clustering:" << std::endl;
 	std::vector<int> result_iter_1(m_dataCount, -1), result_iter_2(m_dataCount, -2);
 	int iter{ 0 };
@@ -175,37 +177,36 @@ void kMeans::show( std::vector<int>& result)
 	}
 }
 
-void kMeans::choice_centr()
-{
-	srand((unsigned)time(NULL));
+void kMeans::FindInitialCentroids() {
+	// Создаем генератор случайных чисел
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_int_distribution<> distrib(0, m_data.size() - 1);
 
-	Iris temp;
-	std::vector<Iris> temp_centr(m_clustersCentersCount, {-1, -1, -1, -1});
-	for (int i {0}; i < m_clustersCentersCount; ++i)
-	{
-		temp = m_data[rand() % m_dataCount];
-		for (int j {i}; j < m_clustersCentersCount; ++j)
-		{
-			/*if (m_centers.empty())
-			{
-				m_centers.push_back(temp);
-			}*/
-			//Проверка на дублирование центров.
-			 if (temp.m_sepal_length == temp_centr[j].m_sepal_length
-				&& temp.m_sepal_width == temp_centr[j].m_sepal_width
-				&& temp.m_petal_length == temp_centr[j].m_petal_length
-				&& temp.m_petal_width == temp_centr[j].m_petal_width)
-			{
-				 --i;
-				 break;
-			}
-			else
-			{
-				 temp_centr[j] = temp;
+	// Создаем вектор для хранения начальных центров кластеров
+	Data<double> centroids(m_clustersCentersCount);
+
+	// Выбираем случайные элементы из вектора данных в качестве начальных центров кластеров
+	for (int i = 0; i < m_clustersCentersCount; ++i) {
+		centroids[i] = m_data[distrib(gen)];
+	}
+
+	// Проверяем, что все начальные центры кластеров различны
+	bool centersAreUnique = false;
+	while (!centersAreUnique) {
+		centersAreUnique = true;
+
+		for (int i = 0; i < m_clustersCentersCount; ++i) {
+			for (int j = i + 1; j < m_clustersCentersCount; ++j) {
+				if (centroids[i] == centroids[j]) {
+					centersAreUnique = false;
+					centroids[i] = m_data[distrib(gen)];
+					break;
+				}
 			}
 		}
 	}
-	m_centers = temp_centr;
+	m_centers = std::move(centroids);
 }
 
 double kMeans::euclidean_distance(const Iris& p, const Iris& q) const
